@@ -49,62 +49,66 @@ struct CarouselWithPreviewWrappedView: View {
             items: items,
             id: \.id,
             preview: { item in
-                item.color
-                    .id(item.id)
+                item.color.id(item.id)
                     .onTapGesture {
                         isPresented.toggle()
                     }
             },
             carousel: { item in
-                item.color
-                    .frame(width: 50, height: 50)
-                    .border(.blue, width: item.id == selection ? 3 : .zero)
-                    .id(item.id)
-                    .onTapGesture {
-                        selection = item.id
-                    }
+                CellView(item: item, selection: $selection)
             }
         )
-            .frame(height: 300)
+            .frame(height: 248)
             .sheet(isPresented: $isPresented) {
-                NavigationView {
-                    CarouselWithPreviewSheetView(selection: $selection, items: items)
-                        .frame(maxHeight: .infinity)
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                Button("close") {
-                                    isPresented.toggle()
-                                }
-                            }
-                        }
-                        .padding(.bottom)
-                }
+                SheetView(selection: $selection, items: items)
             }
     }
 
-    struct CarouselWithPreviewSheetView: View {
+    struct SheetView: View {
+        @Environment(\.presentationMode) private var presentationMode
         @Binding var selection: Int
         let items: [(id: Int, color: Color)]
 
         var body: some View {
-            CarouselWithPreviewView(
-                selection: $selection,
-                items: items,
-                id: \.id,
-                preview: { item in
-                    item.color.id(item.id)
-                },
-                carousel: { item in
-                    item.color
-                        .frame(width: 50, height: 50)
-                        .border(.blue, width: item.id == selection ? 3 : .zero)
-                        .id(item.id)
-                        .onTapGesture {
-                            selection = item.id
+            NavigationView {
+                CarouselWithPreviewView(
+                    selection: $selection,
+                    items: items,
+                    id: \.id,
+                    preview: { item in
+                        item.color.id(item.id)
+                    },
+                    carousel: { item in
+                        CellView(item: item, selection: $selection)
+                    }
+                )
+                    .frame(maxHeight: .infinity)
+                    .navigationTitle("name")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button(action: {
+                                presentationMode.wrappedValue.dismiss()
+                            }) {
+                                Image(systemName: "xmark")
+                            }
                         }
+                    }
+            }
+        }
+    }
+
+    struct CellView: View {
+        let item: (id:Int, color: Color)
+        @Binding var selection: Int
+
+        var body: some View {
+            item.color.id(item.id)
+                .frame(width: 50, height: 50)
+                .border(.blue, width: item.id == selection ? 3 : .zero)
+                .onTapGesture {
+                    selection = item.id
                 }
-            )
         }
     }
 }
@@ -112,6 +116,14 @@ struct CarouselWithPreviewWrappedView: View {
 
 struct CarouselWithPreviewView_Previews: PreviewProvider {
     static var previews: some View {
-        CarouselWithPreviewWrappedView()
+        Group {
+            CarouselWithPreviewWrappedView()
+            CarouselWithPreviewWrappedView.SheetView(selection: .constant(1),
+                                                     items: [
+                                                        (id: 0, color: .black),
+                                                        (id: 1, color: .brown),
+                                                        (id: 2, color: .cyan)
+                                                     ])
+        }
     }
 }
